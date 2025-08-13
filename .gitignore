@@ -1,0 +1,6 @@
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore sql cache
+/solar_data.sqlite
