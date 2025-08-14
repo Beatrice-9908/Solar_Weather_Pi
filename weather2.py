@@ -20,63 +20,72 @@ RETRIES = Retry(total=4, backoff_factor=2)
 SESSION = requests_cache.CachedSession('solar_data', expire_after=1200)
 SESSION.mount('https://', HTTPAdapter(max_retries=RETRIES))
 
-
-def update():
-    #set xml tags for parsing
-    response = SESSION.get(URLHAMQSL, headers=HEADER)
-    root = ET.fromstring(response.content)
-    solardata = root.find("solardata")
-    calccond = solardata.find("calculatedconditions")
-
-    #extracting values from xml file
-    flux = solardata.findtext("solarflux")
-    xray = solardata.findtext("xray")
-    ssn = solardata.findtext("sunspots")
-    wind = solardata.findtext("solarwind")
-    aindex = solardata.findtext("aindex")
-    kindex = solardata.findtext("kindex")
-    protonflux = solardata.findtext("protonflux")
-    electronflux = solardata.findtext("electonflux")
-    geomagfield = solardata.findtext("geomagfield")
-
-    #band conditions
-    bandarray = []
-    bandarray2 = []
-
-    for band in calccond.iter():
-        bandarray.append(band.text)
-
-    for band in root.iter('band'):
-        bandarray2.append(band.get('name'))
-    
-    return(flux, xray, ssn, wind, aindex, kindex, protonflux, electronflux, geomagfield, bandarray, bandarray2)
-
 #setting global variables
 EPD = epd2in13_V4.EPD()
-wImage = Image.new('1', (EPD.height, EPD.width), 255)
-xImage = Image.new('1', (EPD.height, EPD.width), 255)
-yImage = Image.new('1', (EPD.height, EPD.width), 255)
-font15 = ImageFont.truetype('Font.ttc', 15)
+FONT15 = ImageFont.truetype('Font.ttc', 15)
 counter = 1
-buffer = wImage
+
+class update:
+    
+    def __init__(self):
+        #set xml tags for parsing
+        response = SESSION.get(URLHAMQSL, headers=HEADER)
+        root = ET.fromstring(response.content)
+        solardata = root.find("solardata")
+        calccond = solardata.find("calculatedconditions")
+
+        #extracting values from xml file
+        self.flux = solardata.findtext("solarflux")
+        self.xray = solardata.findtext("xray")
+        self.ssn = solardata.findtext("sunspots")
+        self.wind = solardata.findtext("solarwind")
+        self.aindex = solardata.findtext("aindex")
+        self.kindex = solardata.findtext("kindex")
+        self.protonflux = solardata.findtext("protonflux")
+        self.electronflux = solardata.findtext("electonflux")
+        self.geomagfield = solardata.findtext("geomagfield")
+
+        #band conditions
+        self.bandarray = []
+        self.bandnamearray = []
+
+        for band in calccond.iter():
+            self.bandarray.append(band.text)
+
+        for band in root.iter('band'):
+            self.bandnamearray.append(band.get('name'))
+
+#setup data variables
+data = update()
+
+class buffers:
+
+    def __init__(self):
+        self.wImage = Image.new('1', (EPD.height, EPD.width), 255)
+        self.xImage = Image.new('1', (EPD.height, EPD.width), 255)
+        self.yImage = Image.new('1', (EPD.height, EPD.width), 255)
+    def clear(self):
+        self.wImage = Image.new('1', (EPD.height, EPD.width), 255)
+        self.xImage = Image.new('1', (EPD.height, EPD.width), 255)
+        self.yImage = Image.new('1', (EPD.height, EPD.width), 255)
+
+#setup the buffers and first screen
+buffers = buffers()
+buffer = buffers.wImage
 
 #initialize screen
 def initial():
-    global wImage
-    global font15
-
-    flux, xray, ssn, wind, aindex, kindex, protonflux, electronflux, geomagfield, bandarray, bandarray2 = update()
-    
     EPD.init()
     EPD.Clear(0xFF)
    
+    wImage = buffers.wImage
     draww = ImageDraw.Draw(wImage)
     border_title(wImage)
-    draww.text((2, 35), f"Solar Flux = {flux}", font = font15, fill = 0)
-    draww.text((2, 50), f"Sunspots = {ssn}", font = font15, fill = 0)
-    draww.text((2, 65), f"Solar Wind = {wind}", font = font15, fill = 0)
-    draww.text((2, 80), f"Current XRay Flare Class = {xray}", font = font15, fill = 0)
-    draww.text((2, 95), f"A Index = {aindex}   K Index = {kindex}", font = font15, fill = 0)
+    draww.text((2, 35), f"Solar Flux = {data.flux}", font = FONT15, fill = 0)
+    draww.text((2, 50), f"Sunspots = {data.ssn}", font = FONT15, fill = 0)
+    draww.text((2, 65), f"Solar Wind = {data.wind}", font = FONT15, fill = 0)
+    draww.text((2, 80), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
+    draww.text((2, 95), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
 
     EPD.display(EPD.getbuffer(wImage))
     EPD.sleep()
@@ -85,64 +94,60 @@ def initial():
 #refresh all data
 def refresh_data():
     
-    global wImage
-    global xImage
-    global yImage
-    global font15
+    buffers.clear()
     
-    wImage = Image.new('1', (EPD.height, EPD.width), 255)
-    xImage = Image.new('1', (EPD.height, EPD.width), 255)
-    yImage = Image.new('1', (EPD.height, EPD.width), 255)
-
-    flux, xray, ssn, wind, aindex, kindex, protonflux, electronflux, geomagfield, bandarray, bandarray2 = update()
+    wImage = buffers.wImage
+    xImage = buffers.xImage
+    yImage = buffers.yImage
     
     draww = ImageDraw.Draw(wImage)
     drawx = ImageDraw.Draw(xImage)
     drawy = ImageDraw.Draw(yImage)
 
     #draw text to screen
-    draww.text((2, 35), f"Solar Flux = {flux}", font = font15, fill = 0)
-    draww.text((2, 50), f"Sunspots = {ssn}", font = font15, fill = 0)
-    draww.text((2, 65), f"Solar Wind = {wind}", font = font15, fill = 0)
-    draww.text((2, 80), f"Current XRay Flare Class = {xray}", font = font15, fill = 0)
-    draww.text((2, 95), f"A Index = {aindex}   K Index = {kindex}", font = font15, fill = 0)
+    draww.text((2, 35), f"Solar Flux = {data.flux}", font = FONT15, fill = 0)
+    draww.text((2, 50), f"Sunspots = {data.ssn}", font = FONT15, fill = 0)
+    draww.text((2, 65), f"Solar Wind = {data.wind}", font = FONT15, fill = 0)
+    draww.text((2, 80), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
+    draww.text((2, 95), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
     
      
-    drawx.text((2,25), "HF band:", font = font15, fill = 0)
-    drawx.text((2, 45), f"{bandarray2[0]}   day = {bandarray[1]}  night = {bandarray[5]}", font = font15, fill = 0)
-    drawx.text((2, 65), f"{bandarray2[1]}   day = {bandarray[2]}  night = {bandarray[6]}", font = font15, fill = 0)
-    drawx.text((2, 85), f"{bandarray2[2]}   day = {bandarray[3]}  night = {bandarray[7]}", font = font15, fill = 0)
-    drawx.text((2, 105), f"{bandarray2[3]}   day = {bandarray[4]}  night = {bandarray[8]}", font = font15, fill = 0)
+    drawx.text((2,25), "HF band:", font = FONT15, fill = 0)
+    drawx.text((2, 45), f"{data.bandnamearray[0]}   day = {data.bandarray[1]}  night = {data.bandarray[5]}", font = FONT15, fill = 0)
+    drawx.text((2, 65), f"{data.bandnamearray[1]}   day = {data.bandarray[2]}  night = {data.bandarray[6]}", font = FONT15, fill = 0)
+    drawx.text((2, 85), f"{data.bandnamearray[2]}   day = {data.bandarray[3]}  night = {data.bandarray[7]}", font = FONT15, fill = 0)
+    drawx.text((2, 105),f"{data.bandnamearray[3]}   day = {data.bandarray[4]}  night = {data.bandarray[8]}", font = FONT15, fill = 0)
     
     
-    drawy.text((2, 70), f"Proton Flux = {protonflux}", font = font15, fill = 0)   
-    drawy.text((2,85), f"Electron Flux = {electronflux}", font = font15, fill = 0)
-    drawy.text((2, 100), f"GeoMag Field = {geomagfield}", font = font15, fill = 0)
+    drawy.text((2, 70), f"Proton Flux = {data.protonflux}", font = FONT15, fill = 0)   
+    drawy.text((2,85), f"Electron Flux = {data.electronflux}", font = FONT15, fill = 0)
+    drawy.text((2, 100), f"GeoMag Field = {data.geomagfield}", font = FONT15, fill = 0)
    
-    draww.text((180, 25), datetime.now().strftime("%I:%M%p"), font = font15, fill = 0)
-    drawx.text((180, 25), datetime.now().strftime("%I:%M%p"), font = font15, fill = 0)
-    drawy.text((180, 25), datetime.now().strftime("%I:%M%p"), font = font15, fill = 0)
+    draww.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
+    drawx.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
+    drawy.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     
     print("data refreshed")
 
 #draw main border and title for each buffer
 def border_title(buffer):
-    global font15
+
     drawb = ImageDraw.Draw(buffer)
 
-    drawb.text((2,2), "Solar Conditions: " + datetime.now().strftime("%B %d, %Y"), font = font15, fill = 0)
+    drawb.text((2,2), "Solar Conditions: " + datetime.now().strftime("%B %d, %Y"), font = FONT15, fill = 0)
     drawb.line([(0,20),(250,20)], fill = 0, width = 2)
 
 #screen next button functionality
 def button_callback(channel):
     
     global counter
-    global wImage
-    global xImage
-    global yImage
-    global font15
+
+    wImage = buffers.wImage
+    xImage = buffers.xImage
+    yImage = buffers.yImage
 
     EPD.init()
+    
     counter = counter + 1
     if counter > 3:
         counter = 1
@@ -180,9 +185,6 @@ def refresh_loop():
 
 #main program loop
 def main_loop():
-    global wImage
-    global xImage
-    global yImage
 
     initial()
     refresh_data()
