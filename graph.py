@@ -1,4 +1,4 @@
-import xarray as xr
+import h5py
 import cftime
 import matplotlib
 matplotlib.use('Agg')
@@ -50,16 +50,26 @@ powersoften = [1e-8, 1e-7, 1e-6, 1e-5, 1e-4]
 class Graphvariables:
 
     def __init__(self):
-        self.dd = xr.open_dataset(file0, engine="h5netcdf")
-        self.datetime0 = self.dd["time"]
-        self.var_name = self.dd["xrsa_flux"]
-        self.var_name2 = self.dd["xrsb_flux"]
+        with h5py.File(file0, 'r') as dd:
+            self.datetime0 = cftime.num2pydate(dd["time"][::2], dd["time"].attrs["units"].decode())
+            self.var_name = dd["xrsa_flux"][::2]
+            self.var_name2 = dd["xrsb_flux"][::2]
 
 def makegraph():
-    plt.figure(figsize=(3.75, 2.22), dpi=150)
+    plt.figure(figsize=(3.75, 2.22), dpi=100)
     g = Graphvariables()
-    plt.plot(g.datetime0.values, g.var_name.values, linewidth=1, color="black")
-    plt.plot(g.datetime0.values, g.var_name2.values, linewidth=1, color="black")
+    plt.plot(
+            g.datetime0,
+            g.var_name,
+            linewidth=1,
+            color="black"
+        )
+    plt.plot(
+         g.datetime0,
+         g.var_name2,
+         linewidth=1,
+         color="black"
+         )
     plt.tight_layout()
     plt.yscale("log")
     plt.gca().tick_params(axis='both', which='major', width=2, length=5, color="black")
@@ -83,9 +93,6 @@ def drawgraph():
     graph = Image.open('xray.png')
     g = graph.resize((244, 100), Image.LANCZOS)
     zImage.paste(g, (10, 10))
-    #draw.text((2, 20), "10^-7", font = font1, fill = 0) 
-    #draw.text((2, 50), "10^-8", font = font1, fill = 0) 
-    #draw.text((2, 90), "10^-9", font = font1, fill = 0) 
     draw.text((70, 109), "Time[UT] 1 day period", font = font1, fill = 0) 
     epd.display(epd.getbuffer(zImage))
 

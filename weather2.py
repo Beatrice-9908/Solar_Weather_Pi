@@ -13,6 +13,7 @@ import RPi.GPIO as GPIO
 from signal import pause
 from threading import Thread
 import graph
+from pathlib import Path
 
 #setup session and retry mechanism for xml request
 HEADER = {"User-Agent": "SolarWeatherPi/1.0 btayl13@gmail.com"}
@@ -133,6 +134,7 @@ def refresh_data():
     drawx.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     drawy.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     
+    graph.main()
     print("data refreshed")
 
 #draw main border and title for each buffer
@@ -147,6 +149,8 @@ def border_title(buffer):
 def button_callback(channel):
     
     global counter
+    file = Path("xray.png")
+
 
     wImage = buffers.wImage
     xImage = buffers.xImage
@@ -172,7 +176,11 @@ def button_callback(channel):
         EPD.display_fast(EPD.getbuffer(yImage))
         EPD.sleep()
     elif counter == 4:
-        graph.main()
+        if file.is_file():
+            graph.drawgraph()
+        else:
+            EPD.Clear(0xFF)
+            EPD.sleep()
     elif counter == 1:
         EPD.Clear(0xFF)
         border_title(wImage)
@@ -201,5 +209,6 @@ def main_loop():
     GPIO.add_event_detect(15,GPIO.FALLING, callback=button_off, bouncetime=280)
 
 #Multiple threads so loops can run together
+Thread(target = graph.makegraph).start()
 Thread(target = main_loop).start()
 Thread(target = refresh_loop).start()
