@@ -25,7 +25,7 @@ SESSION.mount('https://', HTTPAdapter(max_retries=RETRIES))
 #setting global variables
 EPD = epd2in13_V4.EPD()
 FONT15 = ImageFont.truetype('Font.ttc', 15)
-FONT12 = ImageFont.truetype('Font.ttc', 12)
+FONT12 = ImageFont.truetype('Font.ttc', 11)
 counter = 1
 
 class Update:
@@ -85,9 +85,9 @@ def initial():
     draww.text((2, 37), f"Sunspots = {data.ssn}", font = FONT15, fill = 0)
     draww.text((2, 52), f"Solar Wind = {data.wind}", font = FONT15, fill = 0)
     draww.text((2, 67), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
-    draww.text((2, 82), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
-    draww.text((1, 100), "Solar Condition and Band status data sourced from", font = FONT12, fill = 0)
-    draww.text((1, 110), "https://n0nbh.com https://hamqsl.com", font = FONT12, fill = 0)
+    draww.text((2, 83), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
+    draww.text((15, 100), "Solar Weather data sources", font = FONT12, fill = 0)
+    draww.text((1, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
 
     EPD.display(EPD.getbuffer(wImage))
     EPD.sleep()
@@ -114,27 +114,26 @@ def refresh_data():
     draww.text((2, 52), f"Solar Wind = {data.wind}", font = FONT15, fill = 0)
     draww.text((2, 67), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
     draww.text((2, 82), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
-    draww.text((1, 100), "Solar Condition and Band status data sourced from", font = FONT10, fill = 0)
-    draww.text((1, 110), "https://n0nbh.com https://hamqsl.com", font = FONT12, fill = 0)
+    draww.text((15, 100), "Solar Weather data sources", font = FONT12, fill = 0)
+    draww.text((1, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
      
     drawx.text((2, 22), "HF band:", font = FONT15, fill = 0)
-    drawx.text((2, 42), f"{data.bandnamearray[0]}   day: {data.bandarray[1]}  night: {data.bandarray[5]}", font = FONT15, fill = 0)
+    drawx.text((2, 42), f"{data.bandnamearray[0]}   day: {data.bandarray[1]}   night: {data.bandarray[5]}", font = FONT15, fill = 0)
     drawx.text((2, 62), f"{data.bandnamearray[1]}   day: {data.bandarray[2]}  night: {data.bandarray[6]}", font = FONT15, fill = 0)
     drawx.text((2, 82), f"{data.bandnamearray[2]}   day: {data.bandarray[3]}  night: {data.bandarray[7]}", font = FONT15, fill = 0)
-    drawx.text((2, 102),f"{data.bandnamearray[3]}   day: {data.bandarray[4]}  night: {data.bandarray[8]}", font = FONT15, fill = 0)
+    drawx.text((2, 102), f"{data.bandnamearray[3]}   day: {data.bandarray[4]}   night: {data.bandarray[8]}", font = FONT15, fill = 0)
     
     
-    drawy.text((2, 62), f"Proton Flux = {data.protonflux}", font = FONT15, fill = 0)   
-    drawy.text((2, 72), f"Electron Flux = {data.electronflux}", font = FONT15, fill = 0)
-    drawy.text((2, 82), f"GeoMag Field = {data.geomagfield}", font = FONT15, fill = 0)
-    draww.text((1, 100), "Solar Condition and Band status data sourced from", font = FONT12, fill = 0)
-    draww.text((1, 110), "https://n0nbh.com https://hamqsl.com", font = FONT12, fill = 0)
+    drawy.text((2, 42), f"Proton Flux = {data.protonflux}", font = FONT15, fill = 0)   
+    drawy.text((2, 57), f"Electron Flux = {data.electronflux}", font = FONT15, fill = 0)
+    drawy.text((2, 72), f"GeoMag Field = {data.geomagfield}", font = FONT15, fill = 0)
+    drawy.text((15, 100), "Solar Weather data sources", font = FONT12, fill = 0)
+    drawy.text((1, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
    
     draww.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     drawx.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     drawy.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     
-    graph.main()
     print("data refreshed")
 
 #draw main border and title for each buffer
@@ -201,7 +200,7 @@ def refresh_loop():
 def main_loop():
 
     initial()
-#    refresh_data()
+    refresh_data()
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(13, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)

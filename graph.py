@@ -3,7 +3,7 @@ import cftime
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from datetime import datetime
+import datetime
 import numpy as np
 import os
 import time
@@ -13,11 +13,12 @@ from urllib3.util.retry import Retry
 import epd2in13_V4
 from PIL import Image,ImageDraw,ImageFont
 
-today = datetime.utcnow()
+today = datetime.datetime.now(datetime.UTC)
 year = today.strftime("%Y")
 month = today.strftime("%m")
-#day = today.strftime("%d")
-day = '01'
+difference = datetime.timedelta(days=+4)
+day_difference = today - difference
+day = day_difference.strftime("%d")
 
 RETRIES = Retry(total=4, backoff_factor=2)
 SESSION = requests_cache.CachedSession('xraydata', expiers_after=1200)
@@ -93,7 +94,8 @@ def drawgraph():
     graph = Image.open('xray.png')
     g = graph.resize((244, 100), Image.LANCZOS)
     zImage.paste(g, (10, 10))
-    draw.text((70, 109), "Time[UT] 1 day period", font = font1, fill = 0) 
+    draw.text((65, 3), "GOES-18 1 Minute Average X-Ray Flux", font = font1, fill = 0) 
+    draw.text((95, 109), "Time[UT]", font = font1, fill = 0) 
     epd.display(epd.getbuffer(zImage))
 
     print("displaying graph")
