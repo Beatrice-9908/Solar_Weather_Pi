@@ -1,6 +1,12 @@
-# Ignore Python cache
+#Ignore Python cache
 __pycache__/
 *.pyc
 
-# Ignore sql cache
-/solar_data.sqlite
+#Ignore sql cache
+*.sqlite
+
+#Ignore xray flux plot image
+/xray.png
+
+#Ignore .nc data files
+*.nc
