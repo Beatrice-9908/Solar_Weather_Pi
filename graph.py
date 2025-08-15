@@ -4,7 +4,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import datetime
-import numpy as np
+import numpy
 import os
 import time
 import requests_cache
@@ -27,7 +27,7 @@ SESSION.mount('https://', HTTPAdapter(max_retries=RETRIES))
 
 file0 = f"sci_xrsf-l2-avg1m_g18_d{year}{month}{day}_v2-2-0.nc"
 url_path = f"https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes18/l2/data/xrsf-l2-avg1m_science/{year}/{month}/"
-        
+
 if not os.path.exists(file0):
 
     try:
@@ -87,15 +87,18 @@ def drawgraph():
     epd.init()
     epd.Clear(0xFF)
 
-    font1 = ImageFont.truetype('Font.ttc', 10)
 
+    font1 = ImageFont.truetype('Font.ttc', 10)
+    font2 = ImageFont.truetype('Font.ttc', 9)
+    
     zImage = Image.new('1', (epd.height, epd.width), 10)
     draw = ImageDraw.Draw(zImage)
     graph = Image.open('xray.png')
-    g = graph.resize((244, 100), Image.LANCZOS)
+    g = graph.resize((244, 100), Image.Resampling.LANCZOS)
     zImage.paste(g, (10, 10))
-    draw.text((65, 3), "GOES-18 1 Minute Average X-Ray Flux", font = font1, fill = 0) 
-    draw.text((95, 109), "Time[UT]", font = font1, fill = 0) 
+    draw.text((55, 3), "GOES-18 1 Minute Average X-Ray Flux", font = font1, fill = 0) 
+    draw.text((125, 105), "Time[UT]", font = font1, fill = 0) 
+    draw.text((2, 112), f"{month}/{day}/{year}", font = font2, fill = 0) 
     epd.display(epd.getbuffer(zImage))
 
     print("displaying graph")
@@ -106,3 +109,4 @@ def main():
     makegraph()
     time.sleep(0.1)
     drawgraph()
+main()

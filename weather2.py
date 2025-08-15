@@ -1,4 +1,3 @@
-import sys
 import os
 import schedule
 import time
@@ -10,7 +9,6 @@ import xml.etree.ElementTree as ET
 import epd2in13_V4
 from PIL import Image,ImageDraw,ImageFont
 import RPi.GPIO as GPIO
-from signal import pause
 from threading import Thread
 import graph
 from pathlib import Path
@@ -86,8 +84,8 @@ def initial():
     draww.text((2, 52), f"Solar Wind = {data.wind}", font = FONT15, fill = 0)
     draww.text((2, 67), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
     draww.text((2, 83), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
-    draww.text((15, 100), "Solar Weather data sources", font = FONT12, fill = 0)
-    draww.text((1, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
+    draww.text((25, 100), "Solar Weather data sources", font = FONT12, fill = 0)
+    draww.text((10, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
 
     EPD.display(EPD.getbuffer(wImage))
     EPD.sleep()
@@ -114,21 +112,21 @@ def refresh_data():
     draww.text((2, 52), f"Solar Wind = {data.wind}", font = FONT15, fill = 0)
     draww.text((2, 67), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
     draww.text((2, 82), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
-    draww.text((15, 100), "Solar Weather data sources", font = FONT12, fill = 0)
-    draww.text((1, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
+    draww.text((25, 100), "Solar Weather data sources", font = FONT12, fill = 0)
+    draww.text((10, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
      
     drawx.text((2, 22), "HF band:", font = FONT15, fill = 0)
     drawx.text((2, 42), f"{data.bandnamearray[0]}   day: {data.bandarray[1]}   night: {data.bandarray[5]}", font = FONT15, fill = 0)
-    drawx.text((2, 62), f"{data.bandnamearray[1]}   day: {data.bandarray[2]}  night: {data.bandarray[6]}", font = FONT15, fill = 0)
-    drawx.text((2, 82), f"{data.bandnamearray[2]}   day: {data.bandarray[3]}  night: {data.bandarray[7]}", font = FONT15, fill = 0)
+    drawx.text((2, 62), f"{data.bandnamearray[1]}   day: {data.bandarray[2]}   night: {data.bandarray[6]}", font = FONT15, fill = 0)
+    drawx.text((2, 82), f"{data.bandnamearray[2]}   day: {data.bandarray[3]}   night: {data.bandarray[7]}", font = FONT15, fill = 0)
     drawx.text((2, 102), f"{data.bandnamearray[3]}   day: {data.bandarray[4]}   night: {data.bandarray[8]}", font = FONT15, fill = 0)
     
     
     drawy.text((2, 42), f"Proton Flux = {data.protonflux}", font = FONT15, fill = 0)   
     drawy.text((2, 57), f"Electron Flux = {data.electronflux}", font = FONT15, fill = 0)
     drawy.text((2, 72), f"GeoMag Field = {data.geomagfield}", font = FONT15, fill = 0)
-    drawy.text((15, 100), "Solar Weather data sources", font = FONT12, fill = 0)
-    drawy.text((1, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
+    drawy.text((25, 100), "Solar Weather data sources", font = FONT12, fill = 0)
+    drawy.text((10, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
    
     draww.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     drawx.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
@@ -204,8 +202,8 @@ def main_loop():
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(13, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    GPIO.add_event_detect(13,GPIO.FALLING, callback=button_callback, bouncetime=280)
-    GPIO.add_event_detect(15,GPIO.FALLING, callback=button_off, bouncetime=280)
+    GPIO.add_event_detect(13,GPIO.FALLING, callback=button_callback, bouncetime=350)
+    GPIO.add_event_detect(15,GPIO.FALLING, callback=button_off, bouncetime=350)
 
 #Multiple threads so loops can run together
 Thread(target = graph.makegraph).start()
