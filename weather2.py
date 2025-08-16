@@ -84,8 +84,8 @@ def initial():
     draww.text((2, 52), f"Solar Wind = {data.wind}", font = FONT15, fill = 0)
     draww.text((2, 67), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
     draww.text((2, 83), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
-    draww.text((25, 100), "Solar Weather data sources", font = FONT12, fill = 0)
-    draww.text((10, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
+    draww.text((50, 100), "Solar Weather data sources", font = FONT12, fill = 0)
+    draww.text((20, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
 
     EPD.display(EPD.getbuffer(wImage))
     EPD.sleep()
@@ -112,8 +112,8 @@ def refresh_data():
     draww.text((2, 52), f"Solar Wind = {data.wind}", font = FONT15, fill = 0)
     draww.text((2, 67), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
     draww.text((2, 82), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
-    draww.text((25, 100), "Solar Weather data sources", font = FONT12, fill = 0)
-    draww.text((10, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
+    draww.text((50, 100), "Solar Weather data sources", font = FONT12, fill = 0)
+    draww.text((20, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
      
     drawx.text((2, 22), "HF band:", font = FONT15, fill = 0)
     drawx.text((2, 42), f"{data.bandnamearray[0]}   day: {data.bandarray[1]}   night: {data.bandarray[5]}", font = FONT15, fill = 0)
@@ -122,16 +122,17 @@ def refresh_data():
     drawx.text((2, 102), f"{data.bandnamearray[3]}   day: {data.bandarray[4]}   night: {data.bandarray[8]}", font = FONT15, fill = 0)
     
     
-    drawy.text((2, 42), f"Proton Flux = {data.protonflux}", font = FONT15, fill = 0)   
-    drawy.text((2, 57), f"Electron Flux = {data.electronflux}", font = FONT15, fill = 0)
+    drawy.text((2, 32), f"Proton Flux = {data.protonflux}", font = FONT15, fill = 0)   
+    drawy.text((2, 52), f"Electron Flux = {data.electronflux}", font = FONT15, fill = 0)
     drawy.text((2, 72), f"GeoMag Field = {data.geomagfield}", font = FONT15, fill = 0)
-    drawy.text((25, 100), "Solar Weather data sources", font = FONT12, fill = 0)
-    drawy.text((10, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
+    drawy.text((50, 100), "Solar Weather data sources", font = FONT12, fill = 0)
+    drawy.text((20, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
    
     draww.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     drawx.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     drawy.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     
+
     print("data refreshed")
 
 #draw main border and title for each buffer
@@ -147,7 +148,7 @@ def button_callback(channel):
     
     global counter
     file = Path("xray.png")
-
+    file2 = Path("proton.png")
 
     wImage = buffers.wImage
     xImage = buffers.xImage
@@ -156,7 +157,7 @@ def button_callback(channel):
     EPD.init()
     
     counter = counter + 1
-    if counter > 4:
+    if counter > 5:
         counter = 1
     print("counter updated")
     print(counter)
@@ -174,7 +175,13 @@ def button_callback(channel):
         EPD.sleep()
     elif counter == 4:
         if file.is_file():
-            graph.drawgraph()
+            graph.drawgraph1()
+        else:
+            EPD.Clear(0xFF)
+            EPD.sleep()
+    elif counter == 5:
+        if file2.is_file():
+            graph.drawgraph2()
         else:
             EPD.Clear(0xFF)
             EPD.sleep()
@@ -206,6 +213,5 @@ def main_loop():
     GPIO.add_event_detect(15,GPIO.FALLING, callback=button_off, bouncetime=350)
 
 #Multiple threads so loops can run together
-Thread(target = graph.makegraph).start()
 Thread(target = main_loop).start()
 Thread(target = refresh_loop).start()
