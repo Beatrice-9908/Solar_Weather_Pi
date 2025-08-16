@@ -22,13 +22,14 @@ RETRIES = Retry(total=4, backoff_factor=2)
 SESSION = requests_cache.CachedSession('solar_data', expire_after=1200)
 SESSION.mount('https://', HTTPAdapter(max_retries=RETRIES))
 
-#setting global variables
+#setting global variables and set counter for screen next button
 EPD = epd2in13_V4.EPD()
 FONT15 = ImageFont.truetype('Font.ttc', 15)
 FONT12 = ImageFont.truetype('Font.ttc', 11)
 counter = 1
 counter_queue = queue.Queue()
 
+#class to hold data from xml file
 class Update:
     
     def __init__(self):
@@ -58,6 +59,8 @@ class Update:
 
         for band in root.iter('band'):
             self.bandnamearray.append(band.get('name'))
+
+#class to hold buffer data
 class Buffers:
 
     def __init__(self, epd):
@@ -82,6 +85,7 @@ buffer = buffers.wImage
 #initialize screen
 EPD.init()
 
+#draw and display first screen
 def initial():
     EPD.Clear(0xFF)
     
@@ -94,8 +98,8 @@ def initial():
     draww.text((2, 52), f"Solar Wind = {data.wind}", font = FONT15, fill = 0)
     draww.text((2, 67), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
     draww.text((2, 83), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
-    draww.text((50, 100), "Solar Weather data sources", font = FONT12, fill = 0)
-    draww.text((20, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
+    draww.text((50, 99), "Solar Weather data sources", font = FONT12, fill = 0)
+    draww.text((20, 108), "https://hamqsl.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
 
     buffers.locked_display(wImage)
 
@@ -131,31 +135,37 @@ def refresh_data():
     draww.text((2, 52), f"Solar Wind = {data.wind}", font = FONT15, fill = 0)
     draww.text((2, 67), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
     draww.text((2, 82), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
-    draww.text((50, 100), "Solar Weather data sources", font = FONT12, fill = 0)
-    draww.text((20, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
+    draww.text((50, 99), "Solar Weather data sources", font = FONT12, fill = 0)
+    draww.text((20, 108), "https://hamqsl.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
      
     drawx.text((2, 22), "HF band:", font = FONT15, fill = 0)
-    drawx.text((2, 42), f"{data.bandnamearray[0]}   day: {data.bandarray[1]}   night: {data.bandarray[5]}", font = FONT15, fill = 0)
-    drawx.text((2, 62), f"{data.bandnamearray[1]}   day: {data.bandarray[2]}   night: {data.bandarray[6]}", font = FONT15, fill = 0)
-    drawx.text((2, 82), f"{data.bandnamearray[2]}   day: {data.bandarray[3]}   night: {data.bandarray[7]}", font = FONT15, fill = 0)
-    drawx.text((2, 102), f"{data.bandnamearray[3]}   day: {data.bandarray[4]}   night: {data.bandarray[8]}", font = FONT15, fill = 0)
+    drawx.text((2, 42), f"{data.bandnamearray[0]}" + "   day: " + f"{data.bandarray[1]}", font = FONT15, fill = 0)
+    drawx.text((150, 42), "   night: " + f"{data.bandarray[5]}", font = FONT15, fill = 0)
+    drawx.text((2, 62), f"{data.bandnamearray[1]}" + "   day: " + f"{data.bandarray[2]}", font = FONT15, fill = 0)
+    drawx.text((150, 62), "   night: " + f"{data.bandarray[6]}", font = FONT15, fill = 0)
+    drawx.text((2, 82), f"{data.bandnamearray[2]}" + "   day: " + f"{data.bandarray[3]}", font = FONT15, fill = 0)
+    drawx.text((150, 82), "   night: " + f"{data.bandarray[7]}", font = FONT15, fill = 0)
+    drawx.text((2, 102), f"{data.bandnamearray[3]}" + "   day: " + f"{data.bandarray[4]}", font = FONT15, fill = 0)
+    drawx.text((150, 102), "   night: " + f"{data.bandarray[8]}", font = FONT15, fill = 0)
     
     
     drawy.text((2, 32), f"Proton Flux = {data.protonflux}", font = FONT15, fill = 0)   
     drawy.text((2, 52), f"Electron Flux = {data.electronflux}", font = FONT15, fill = 0)
     drawy.text((2, 72), f"GeoMag Field = {data.geomagfield}", font = FONT15, fill = 0)
-    drawy.text((50, 100), "Solar Weather data sources", font = FONT12, fill = 0)
-    drawy.text((20, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
+    drawy.text((50, 99), "Solar Weather data sources", font = FONT12, fill = 0)
+    drawy.text((20, 108), "https://hamqsl.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
    
     draww.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     drawx.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     drawy.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     print("data refreshed")
     
+    #download and update plots to latest data
     graph.main()
     time.sleep(1)
     graph.main2()
 
+#callback for screen next button
 def button_callback(channel):
     print("button pressed")
     global counter
@@ -225,7 +235,7 @@ def main_loop():
     GPIO.add_event_detect(13,GPIO.FALLING, callback=button_callback, bouncetime=350)
     GPIO.add_event_detect(15,GPIO.FALLING, callback=button_off, bouncetime=350)
 
-#Multiple threads so loops can run together
+#Multiple threads so functions and loops can run together
 Thread(target = refresh_data).start()
 Thread(target = main_loop).start()
 Thread(target = button_action).start()
