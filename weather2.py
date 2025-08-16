@@ -9,9 +9,11 @@ import xml.etree.ElementTree as ET
 import epd2in13_V4
 from PIL import Image,ImageDraw,ImageFont
 import RPi.GPIO as GPIO
+import threading
 from threading import Thread
 import graph
 from pathlib import Path
+import queue
 
 #setup session and retry mechanism for xml request
 HEADER = {"User-Agent": "SolarWeatherPi/1.0 btayl13@gmail.com"}
@@ -25,6 +27,7 @@ EPD = epd2in13_V4.EPD()
 FONT15 = ImageFont.truetype('Font.ttc', 15)
 FONT12 = ImageFont.truetype('Font.ttc', 11)
 counter = 1
+counter_queue = queue.Queue()
 
 class Update:
     
@@ -57,22 +60,29 @@ class Update:
             self.bandnamearray.append(band.get('name'))
 class Buffers:
 
-    def __init__(self):
-        self.wImage = Image.new('1', (EPD.height, EPD.width), 255)
-        self.xImage = Image.new('1', (EPD.height, EPD.width), 255)
-        self.yImage = Image.new('1', (EPD.height, EPD.width), 255)
+    def __init__(self, epd):
+        self.lock = threading.Lock()
+        self.epd = epd
+        self.wImage = Image.new('1', (epd.height, epd.width), 255)
+        self.xImage = Image.new('1', (epd.height, epd.width), 255)
+        self.yImage = Image.new('1', (epd.height, epd.width), 255)
     def clear(self):
-        self.wImage = Image.new('1', (EPD.height, EPD.width), 255)
-        self.xImage = Image.new('1', (EPD.height, EPD.width), 255)
-        self.yImage = Image.new('1', (EPD.height, EPD.width), 255)
+        #with self.lock:
+            self.wImage = Image.new('1', (self.epd.height, self.epd.width), 255)
+            self.xImage = Image.new('1', (self.epd.height, self.epd.width), 255)
+            self.yImage = Image.new('1', (self.epd.height, self.epd.width), 255)
+    def locked_display(self, buff):
+        with self.lock:
+            self.epd.display_fast(self.epd.getbuffer(buff))
 
 #setup the buffers and first screen
-buffers = Buffers()
+buffers = Buffers(EPD)
 buffer = buffers.wImage
 
 #initialize screen
+EPD.init()
+
 def initial():
-    EPD.init()
     EPD.Clear(0xFF)
     
     data = Update()
@@ -87,9 +97,18 @@ def initial():
     draww.text((50, 100), "Solar Weather data sources", font = FONT12, fill = 0)
     draww.text((20, 110), "https://n0nbh.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
 
-    EPD.display(EPD.getbuffer(wImage))
-    EPD.sleep()
-    GPIO.cleanup()
+    buffers.locked_display(wImage)
+
+#draw main border and title for each buffer
+def border_title(buffer):
+
+    drawb = ImageDraw.Draw(buffer)
+
+    drawb.text((2,2), "Solar Conditions: " + datetime.now().strftime("%B %d, %Y"), font = FONT15, fill = 0)
+    drawb.line([(0,20),(250,20)], fill = 0, width = 2)
+
+#start initial buffer
+initial()
 
 #refresh all data
 def refresh_data():
@@ -131,65 +150,61 @@ def refresh_data():
     draww.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     drawx.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     drawy.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
-    
-
     print("data refreshed")
+    
+    graph.main()
+    time.sleep(1)
+    graph.main2()
 
-#draw main border and title for each buffer
-def border_title(buffer):
-
-    drawb = ImageDraw.Draw(buffer)
-
-    drawb.text((2,2), "Solar Conditions: " + datetime.now().strftime("%B %d, %Y"), font = FONT15, fill = 0)
-    drawb.line([(0,20),(250,20)], fill = 0, width = 2)
-
-#screen next button functionality
 def button_callback(channel):
-    
+    print("button pressed")
     global counter
-    file = Path("xray.png")
-    file2 = Path("proton.png")
-
-    wImage = buffers.wImage
-    xImage = buffers.xImage
-    yImage = buffers.yImage
-
-    EPD.init()
-    
     counter = counter + 1
     if counter > 5:
         counter = 1
-    print("counter updated")
-    print(counter)
 
-    if counter == 2:
-        EPD.Clear(0xFF)
-        border_title(xImage)
-        print("button pressed")
-        EPD.display_fast(EPD.getbuffer(xImage))
-        EPD.sleep()
-    elif counter == 3:
-        EPD.Clear(0xFF)
-        border_title(yImage)
-        EPD.display_fast(EPD.getbuffer(yImage))
-        EPD.sleep()
-    elif counter == 4:
-        if file.is_file():
-            graph.drawgraph1()
-        else:
-            EPD.Clear(0xFF)
-            EPD.sleep()
-    elif counter == 5:
-        if file2.is_file():
-            graph.drawgraph2()
-        else:
-            EPD.Clear(0xFF)
-            EPD.sleep()
-    elif counter == 1:
-        EPD.Clear(0xFF)
-        border_title(wImage)
-        EPD.display_fast(EPD.getbuffer(wImage))
-        EPD.sleep()
+    counter_queue.put(counter)
+
+#screen next button functionality
+def button_action():
+    while True:
+        
+        counter = counter_queue.get()
+        try:
+           
+            file = Path("xray.png")
+            file2 = Path("proton.png")
+
+            wImage = buffers.wImage
+            xImage = buffers.xImage
+            yImage = buffers.yImage
+
+            if counter == 2:
+                EPD.Clear(0xFF)
+                border_title(xImage)
+                buffers.locked_display(xImage)
+            elif counter == 3:
+                EPD.Clear(0xFF)
+                border_title(yImage)
+                buffers.locked_display(yImage)
+            elif counter == 4:
+                if file.is_file():
+                    graph.drawgraph1()
+                else:
+                    EPD.Clear(0xFF)
+            elif counter == 5:
+                if file2.is_file():
+                    graph.drawgraph2()
+                else:
+                    EPD.Clear(0xFF)
+            elif counter == 1:
+                EPD.Clear(0xFF)
+                border_title(wImage)
+                buffers.locked_display(wImage)
+        except Exception as e:
+            import traceback
+            print("error", e)
+            traceback.print_exc()
 
 #power off button functionality
 def button_off(channel):
@@ -200,12 +215,10 @@ def refresh_loop():
     schedule.every(20).minutes.do(refresh_data)
     while True:
         schedule.run_pending()
+        time.sleep(0.5)
 
 #main program loop
 def main_loop():
-
-    initial()
-    refresh_data()
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(13, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
@@ -213,5 +226,7 @@ def main_loop():
     GPIO.add_event_detect(15,GPIO.FALLING, callback=button_off, bouncetime=350)
 
 #Multiple threads so loops can run together
+Thread(target = refresh_data).start()
 Thread(target = main_loop).start()
-Thread(target = refresh_loop).start()
+Thread(target = button_action).start()
+Thread(target = refresh_loop, daemon=True).start()

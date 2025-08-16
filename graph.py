@@ -94,8 +94,9 @@ def makegraph1(file):
     plt.yticks(powersoften, flareclasses)
     plt.gca().set_xticklabels([])
     plt.grid(True, axis='y', linestyle='dotted', linewidth=2)
-    plt.savefig('xray.png', dpi=100, bbox_inches='tight')
+    plt.savefig('xray_inter.png', dpi=100, bbox_inches='tight')
     plt.close()
+    os.rename("xray_inter.png", "xray.png")
     print("made graph")
 
 def makegraph2(file):
@@ -114,14 +115,14 @@ def makegraph2(file):
     plt.tight_layout()
     plt.yscale("log")
     plt.gca().set_xticklabels([])
-    plt.savefig('proton.png', dpi=150, bbox_inches='tight')
+    plt.savefig('proton_inter.png', dpi=150, bbox_inches='tight')
     plt.close()
+    os.rename("proton_inter.png", "proton.png")
     print("made graph2")
 
 epd = epd2in13_V4.EPD()
 
 def drawgraph1():
-    epd.init()
     epd.Clear(0xFF)
 
     font1 = ImageFont.truetype('Font.ttc', 10)
@@ -138,11 +139,8 @@ def drawgraph1():
     epd.display(epd.getbuffer(zImage))
 
     print("displaying graph")
-    epd.init()
-    epd.sleep()
 
 def drawgraph2():
-    epd.init()
     epd.Clear(0xFF)
 
 
@@ -160,6 +158,11 @@ def drawgraph2():
     epd.display(epd.getbuffer(aImage))
 
     print("displaying graph")
-    epd.init()
-    epd.sleep()
 
+def main():
+    download(file0, url_path)
+    download(file1, url_path2)
+
+def main2():
+    makegraph1(file0)
+    makegraph2(file1)
