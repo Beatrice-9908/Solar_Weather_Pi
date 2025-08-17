@@ -2,11 +2,11 @@
 __pycache__/
 *.pyc
 
-#Ignore sql cache
+#Ignore sql caches
 *.sqlite
 
-#Ignore xray flux plot image
-/xray.png
+#Ignore plot images
+*.png
 
 #Ignore .nc data files
 *.nc
