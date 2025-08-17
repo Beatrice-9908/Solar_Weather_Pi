@@ -73,8 +73,9 @@ class Buffers:
         self.yImage = Image.new('1', (epd.height, epd.width), 255)
         self.zImage = Image.new('1', (epd.height, epd.width), 255)
         self.aImage = Image.new('1', (epd.height, epd.width), 255)
+        self.bImage = Image.new('1', (epd.height, epd.width), 255)
     def clear(self):
-        #with self.lock:
+        with self.lock:
             self.wImage = Image.new('1', (self.epd.height, self.epd.width), 255)
             self.xImage = Image.new('1', (self.epd.height, self.epd.width), 255)
             self.yImage = Image.new('1', (self.epd.height, self.epd.width), 255)
@@ -90,8 +91,6 @@ class Buffers:
 
 #setup the buffers and first screen
 buffers = Buffers(EPD)
-buffer = buffers.wImage
-
 
 #draw and display first screen
 def initial():
@@ -113,14 +112,23 @@ def initial():
     buffers.locked_display(wImage)
 
 
+#set first screen buffer for border_title
+titlebuffer = buffers.wImage
+
 #draw main border and title for each buffer
-def border_title(buffer):
+def border_title(titlebuffer):
 
-    drawb = ImageDraw.Draw(buffer)
+    drawb = ImageDraw.Draw(titlebuffer)
 
-    drawb.text((2,2), "Solar Conditions: " + datetime.now().strftime("%B %d, %Y"), font = FONT15, fill = 0)
+    drawb.text((2,2), "Solar Conditions: " + datetime.now().strftime("%B %d %Y"), font = FONT15, fill = 0)
     drawb.line([(0,20),(250,20)], fill = 0, width = 2)
 
+
+def screen_loading(buff):
+    
+    drawb = ImageDraw.Draw(buff)
+    drawb.text((15,55), "Screen is still currently loading", font = FONT15, fill = 0)
+    drawb.text((20,75), "please stand by ...", font = FONT15, fill = 0)
 
 #start initial buffer
 initial()
@@ -205,6 +213,7 @@ def button_action():
             yImage = buffers.yImage
             zImage = buffers.zImage
             aImage = buffers.aImage
+            bImage = buffers.bImage
 
             if counter == 2:
                 buffers.locked_init()
@@ -220,14 +229,18 @@ def button_action():
                     graph.drawgraph1(zImage)
                     buffers.locked_display(zImage)
                 else:
-                    print("error")
+                    buffers.locked_init()
+                    screen_loading(bImage)
+                    buffers.locked_display(bImage)
             elif counter == 5:
                 if file2.is_file():
                     buffers.locked_init()
                     graph.drawgraph2(aImage)
                     buffers.locked_display(aImage)
                 else:
-                    print("error")
+                    buffers.locked_init()
+                    screen_loading(bImage)
+                    buffers.locked_display(bImage)
             elif counter == 1:
                 buffers.locked_init()
                 border_title(wImage)

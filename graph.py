@@ -12,6 +12,8 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 import epd2in13_V4
 from PIL import Image,ImageDraw,ImageFont
+import json
+
 
 #set datetime variables and day differences because NOAA l1b and l2 data sometimes isnt available
 today = datetime.datetime.now(datetime.UTC)
@@ -20,6 +22,7 @@ month = today.strftime("%m")
 difference = datetime.timedelta(days=+2)
 day_difference = today - difference
 day = day_difference.strftime("%d")
+current_day = today.strftime("%d")
 
 #setup retry and cache mechanisms
 RETRIES = Retry(total=4, backoff_factor=2)
@@ -33,9 +36,12 @@ url_path2= f"https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellit
 url_path = f"https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes18/l1b/exis-l1b-sfxr/{year}/{month}/"
 
 #setting y axis tick marks for sfxr data
-flareclasses = ["A","B", "C", "M", "X"]
-powersoften = [1e-8, 1e-7, 1e-6, 1e-5, 1e-4]
+flareclasses = ["", "A", "B", "C", "M", "X", ""]
+powersoften = [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3]
 
+
+file3 = "xrays-1-day.json"
+url_path3 = "https://services.swpc.noaa.gov/json/goes/primary/"
 
 #download new data from noaa
 def download(file, url):
@@ -58,7 +64,7 @@ def download(file, url):
 
 
 #class to hold data from .nc files for graphing
-class Graphvariables:
+class NcFileVariables:
 
     def __init__(self, file):
         self.dd = h5py.File(file, 'r')
@@ -75,23 +81,68 @@ class Graphvariables:
     def close(self):
         self.dd.close()
 
+class JsonVariables:
+    def __init__(self, file):
+        with open(file, 'r') as f:
+            self.data = json.load(f)
+    def fluxj(self):
+        data = self.data
+        energy1 = []
+        flux1 = []
+        time1 = []
+        contam1 = []
+        correct1 = []
+        for entry in data:
+            energy1.append(entry["energy"])
+            flux1.append(entry["flux"])
+            time1.append(entry["time_tag"])
+            contam1.append(entry["electron_contaminaton"])
+            correct1.append(entry["electron_correction"])
+        
+        energy = np.array(energy1)
+        flux = np.array(flux1)
+        time = np.array(time1)
+        contam = np.array(contam1)
+        correct = np.array(correct1)
+
+        lowpassband = energy == "0.05-0.4nm"
+        highpassband = energy == "0.1-0.8nm"
+        
+        
+        timeh = time[highpassband]
+        timel = time[lowpassband]
+
+        fluxvh = np.where(contam[highpassband] == 1, correct[highpassband], flux[highpassband])
+        fluxvl = np.where(contam[lowpassband] == 1, correct[lowpassband], flux[lowpassband])
+
+        self.fluxvh = fluxvh
+        self.fluxvl = fluxvl
+        self.timeh = timeh
+        self.timel = timel
+
+        downsample = 6
+
+        self.fluxvh = self.fluxvh[::downsample]
+        self.fluxvl = self.fluxvl[::downsample]
+        self.timeh = self.timeh[::downsample]
+        self.timel = self.timel[::downsample]
+
 
 #make graph for goes-18 sfxr
 def makegraph1(file):
 
     plt.figure(figsize=(3.75, 2.22), dpi=100)
-    g = Graphvariables(file)
-    g.xray()
-    g.close()
+    j = JsonVariables(file)
+    j.fluxj()
     plt.plot(
-        g.datetime0,
-        g.var_name,
+        j.timel,
+        j.fluxvl,
         linewidth=1,
         color="black"
         )
     plt.plot(
-        g.datetime0,
-        g.var_name2,
+        j.timeh,
+        j.fluxvh,
         linewidth=1,
         color="black"
         )
@@ -111,7 +162,7 @@ def makegraph1(file):
 def makegraph2(file):
 
     plt.figure(figsize=(3.75, 2.22), dpi=150)
-    g = Graphvariables(file)
+    g = NcFileVariables(file)
     g.proton()
     g.close()
     plt.rcParams['font.size'] = 12
@@ -141,10 +192,9 @@ def drawgraph1(buff):
     graph = Image.open('xray.png')
     g = graph.resize((244, 100), Image.Resampling.LANCZOS)
     buff.paste(g, (10, 10))
-    draw.text((60, 3), "GOES-18 Soft X-Ray Flux Measurements", font = font1, fill = 0) 
+    draw.text((60, 3), "GOES-18 X-Ray Flux Measurements 1 Day", font = font1, fill = 0) 
     draw.text((120, 109), "Time[UT]", font = font1, fill = 0) 
-    draw.text((0, 0), f"{month}/{day}/{year}", font = font2, fill = 0) 
-    draw.text((0, 109), "L1b operational data", font = font2, fill = 0) 
+    draw.text((0, 0), f"{month}/{current_day}/{year}", font = font2, fill = 0) 
     print("displaying graph")
 
 
@@ -168,11 +218,11 @@ def drawgraph2(buff):
 #download newest data for both graphs
 def main_download():
     
-    download(file0, url_path)
     download(file1, url_path2)
+    download(file3, url_path3)
 
 #make new graphs for both sets fo data
 def main_make():
     
-    makegraph1(file0)
     makegraph2(file1)
+    makegraph1(file3)
