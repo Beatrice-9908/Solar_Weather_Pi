@@ -16,7 +16,7 @@ from pathlib import Path
 import queue
 
 #setup session and retry mechanism for xml request
-HEADER = {"User-Agent": "SolarWeatherPi/1.0 btayl13@gmail.com"}
+HEADER = {"User-Agent": "SolarWeatherPi/1.0"}
 URLHAMQSL = 'https://www.hamqsl.com/solarxml.php'
 RETRIES = Retry(total=4, backoff_factor=2)
 SESSION = requests_cache.CachedSession('solar_data', expire_after=1200)
@@ -25,9 +25,10 @@ SESSION.mount('https://', HTTPAdapter(max_retries=RETRIES))
 #setting global variables and set counter for screen next button
 EPD = epd2in13_V4.EPD()
 FONT15 = ImageFont.truetype('Font.ttc', 15)
-FONT12 = ImageFont.truetype('Font.ttc', 11)
+FONT11 = ImageFont.truetype('Font.ttc', 11)
 counter = 1
 counter_queue = queue.Queue()
+
 
 #class to hold data from xml file
 class Update:
@@ -60,6 +61,7 @@ class Update:
         for band in root.iter('band'):
             self.bandnamearray.append(band.get('name'))
 
+
 #class to hold buffer data
 class Buffers:
 
@@ -69,21 +71,27 @@ class Buffers:
         self.wImage = Image.new('1', (epd.height, epd.width), 255)
         self.xImage = Image.new('1', (epd.height, epd.width), 255)
         self.yImage = Image.new('1', (epd.height, epd.width), 255)
+        self.zImage = Image.new('1', (epd.height, epd.width), 255)
+        self.aImage = Image.new('1', (epd.height, epd.width), 255)
     def clear(self):
         #with self.lock:
             self.wImage = Image.new('1', (self.epd.height, self.epd.width), 255)
             self.xImage = Image.new('1', (self.epd.height, self.epd.width), 255)
             self.yImage = Image.new('1', (self.epd.height, self.epd.width), 255)
-    def locked_display(self, buff):
+    def locked_init(self):
         with self.lock:
             self.epd.init()
-            self.epd.Clear(0xFF)
+            self.epd.Clear(0xff)
+    def locked_display(self, buff):
+        with self.lock:
             self.epd.display_fast(self.epd.getbuffer(buff))
             self.epd.sleep()
+
 
 #setup the buffers and first screen
 buffers = Buffers(EPD)
 buffer = buffers.wImage
+
 
 #draw and display first screen
 def initial():
@@ -92,15 +100,18 @@ def initial():
     wImage = buffers.wImage
     draww = ImageDraw.Draw(wImage)
     border_title(wImage)
+
     draww.text((2, 22), f"Solar Flux = {data.flux}", font = FONT15, fill = 0)
     draww.text((2, 37), f"Sunspots = {data.ssn}", font = FONT15, fill = 0)
     draww.text((2, 52), f"Solar Wind = {data.wind}", font = FONT15, fill = 0)
     draww.text((2, 67), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
     draww.text((2, 83), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
-    draww.text((50, 99), "Solar Weather data sources", font = FONT12, fill = 0)
-    draww.text((20, 108), "https://hamqsl.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
-
+    draww.text((50, 99), "Solar Weather data sources", font = FONT11, fill = 0)
+    draww.text((10, 108), "https://hamqsl.com          https://ncei.noaa.gov", font = FONT11, fill = 0)
+    
+    buffers.locked_init()
     buffers.locked_display(wImage)
+
 
 #draw main border and title for each buffer
 def border_title(buffer):
@@ -110,8 +121,10 @@ def border_title(buffer):
     drawb.text((2,2), "Solar Conditions: " + datetime.now().strftime("%B %d, %Y"), font = FONT15, fill = 0)
     drawb.line([(0,20),(250,20)], fill = 0, width = 2)
 
+
 #start initial buffer
 initial()
+
 
 #refresh all data
 def refresh_data():
@@ -134,8 +147,8 @@ def refresh_data():
     draww.text((2, 52), f"Solar Wind = {data.wind}", font = FONT15, fill = 0)
     draww.text((2, 67), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
     draww.text((2, 82), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
-    draww.text((50, 99), "Solar Weather data sources", font = FONT12, fill = 0)
-    draww.text((20, 108), "https://hamqsl.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
+    draww.text((50, 99), "Solar Weather data sources", font = FONT11, fill = 0)
+    draww.text((10, 108), "https://hamqsl.com          https://ncei.noaa.gov", font = FONT11, fill = 0)
      
     drawx.text((2, 22), "HF band:", font = FONT15, fill = 0)
     drawx.text((2, 42), f"{data.bandnamearray[0]}" + "   day: " + f"{data.bandarray[1]}", font = FONT15, fill = 0)
@@ -151,8 +164,8 @@ def refresh_data():
     drawy.text((2, 32), f"Proton Flux = {data.protonflux}", font = FONT15, fill = 0)   
     drawy.text((2, 52), f"Electron Flux = {data.electronflux}", font = FONT15, fill = 0)
     drawy.text((2, 72), f"GeoMag Field = {data.geomagfield}", font = FONT15, fill = 0)
-    drawy.text((50, 99), "Solar Weather data sources", font = FONT12, fill = 0)
-    drawy.text((20, 108), "https://hamqsl.com     https://ncei.noaa.gov", font = FONT12, fill = 0)
+    drawy.text((50, 99), "Solar Weather data sources", font = FONT11, fill = 0)
+    drawy.text((10, 108), "https://hamqsl.com          https://ncei.noaa.gov", font = FONT11, fill = 0)
    
     draww.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     drawx.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
@@ -160,12 +173,14 @@ def refresh_data():
     print("data refreshed")
     
     #download and update plots to latest data
-    graph.main()
+    graph.main_download()
     time.sleep(1)
-    graph.main2()
+    graph.main_make()
+
 
 #callback for screen next button
 def button_callback(channel):
+    
     print("button pressed")
     global counter
     counter = counter + 1
@@ -174,8 +189,10 @@ def button_callback(channel):
 
     counter_queue.put(counter)
 
+
 #screen next button functionality
 def button_action():
+    
     while True:
         counter = counter_queue.get()
         try:
@@ -186,24 +203,33 @@ def button_action():
             wImage = buffers.wImage
             xImage = buffers.xImage
             yImage = buffers.yImage
+            zImage = buffers.zImage
+            aImage = buffers.aImage
 
             if counter == 2:
+                buffers.locked_init()
                 border_title(xImage)
                 buffers.locked_display(xImage)
             elif counter == 3:
+                buffers.locked_init()
                 border_title(yImage)
                 buffers.locked_display(yImage)
             elif counter == 4:
                 if file.is_file():
-                    graph.drawgraph1()
+                    buffers.locked_init()
+                    graph.drawgraph1(zImage)
+                    buffers.locked_display(zImage)
                 else:
-                    print("hi")
+                    print("error")
             elif counter == 5:
                 if file2.is_file():
-                    graph.drawgraph2()
+                    buffers.locked_init()
+                    graph.drawgraph2(aImage)
+                    buffers.locked_display(aImage)
                 else:
-                    print("hi")
+                    print("error")
             elif counter == 1:
+                buffers.locked_init()
                 border_title(wImage)
                 buffers.locked_display(wImage)
         except Exception as e:
@@ -211,9 +237,11 @@ def button_action():
             print("error", e)
             traceback.print_exc()
 
+
 #power off button functionality
 def button_off(channel):
     os.system("sudo systemctl poweroff")
+
 
 #data refresh loop
 def refresh_loop():
@@ -222,6 +250,7 @@ def refresh_loop():
         schedule.run_pending()
         time.sleep(0.5)
 
+
 #main program loop
 def main_loop():
     GPIO.setmode(GPIO.BOARD)
@@ -229,6 +258,7 @@ def main_loop():
     GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     GPIO.add_event_detect(13,GPIO.FALLING, callback=button_callback, bouncetime=350)
     GPIO.add_event_detect(15,GPIO.FALLING, callback=button_off, bouncetime=350)
+
 
 #Multiple threads so functions and loops can run together
 Thread(target = refresh_data).start()

@@ -13,7 +13,7 @@ from urllib3.util.retry import Retry
 import epd2in13_V4
 from PIL import Image,ImageDraw,ImageFont
 
-#set datetime variables and day differences because NOAA l1b and l2 data sometimes not available
+#set datetime variables and day differences because NOAA l1b and l2 data sometimes isnt available
 today = datetime.datetime.now(datetime.UTC)
 year = today.strftime("%Y")
 month = today.strftime("%m")
@@ -21,19 +21,25 @@ difference = datetime.timedelta(days=+2)
 day_difference = today - difference
 day = day_difference.strftime("%d")
 
-#setup retry and cache
+#setup retry and cache mechanisms
 RETRIES = Retry(total=4, backoff_factor=2)
-SESSION = requests_cache.CachedSession('xraydata', expiers_after=1200)
+SESSION = requests_cache.CachedSession('graphdata', expiers_after=1200)
 SESSION.mount('https://', HTTPAdapter(max_retries=RETRIES))
 
-
+#file and url info
 file0 = f"ops_exis-l1b-sfxr_g18_d{year}{month}{day}_v0-0-0.nc"
 file1= f"sci_sgps-l2-avg1m_g19_d{year}{month}{day}_v3-0-2.nc"
 url_path2= f"https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes19/l2/data/sgps-l2-avg1m/{year}/{month}/"
 url_path = f"https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes18/l1b/exis-l1b-sfxr/{year}/{month}/"
 
+#setting y axis tick marks for sfxr data
+flareclasses = ["A","B", "C", "M", "X"]
+powersoften = [1e-8, 1e-7, 1e-6, 1e-5, 1e-4]
+
+
 #download new data from noaa
 def download(file, url):
+  
     if not os.path.exists(file):
         try:
             headers = {"User-Agent": "SolarWeatherPi/1.0"}   
@@ -50,12 +56,10 @@ def download(file, url):
             with open(file,"wb") as f:
                 f.write(r.content)
 
-#setting y axis tick marks for sfxr data
-flareclasses = ["A","B", "C", "M", "X"]
-powersoften = [1e-8, 1e-7, 1e-6, 1e-5, 1e-4]
 
 #class to hold data from .nc files for graphing
 class Graphvariables:
+
     def __init__(self, file):
         self.dd = h5py.File(file, 'r')
         self.datetime0 = cftime.num2pydate(self.dd["time"][::2], self.dd["time"].attrs["units"].decode())
@@ -71,8 +75,10 @@ class Graphvariables:
     def close(self):
         self.dd.close()
 
+
 #make graph for goes-18 sfxr
 def makegraph1(file):
+
     plt.figure(figsize=(3.75, 2.22), dpi=100)
     g = Graphvariables(file)
     g.xray()
@@ -100,8 +106,10 @@ def makegraph1(file):
     os.rename("xray_inter.png", "xray.png")
     print("made graph")
 
+
 #make graph for goes-19 sgps data
 def makegraph2(file):
+
     plt.figure(figsize=(3.75, 2.22), dpi=150)
     g = Graphvariables(file)
     g.proton()
@@ -122,54 +130,49 @@ def makegraph2(file):
     os.rename("proton_inter.png", "proton.png")
     print("made graph2")
 
-epd = epd2in13_V4.EPD()
 
-#display sfxr graph to new buffer
-def drawgraph1():
-    epd.Clear(0xFF)
+#draw sfxr graph to new buffer
+def drawgraph1(buff):
 
     font1 = ImageFont.truetype('Font.ttc', 10)
     font2 = ImageFont.truetype('Font.ttc', 9)
 
-    zImage = Image.new('1', (epd.height, epd.width), 10)
-    draw = ImageDraw.Draw(zImage)
+    draw = ImageDraw.Draw(buff)
     graph = Image.open('xray.png')
     g = graph.resize((244, 100), Image.Resampling.LANCZOS)
-    zImage.paste(g, (10, 10))
+    buff.paste(g, (10, 10))
     draw.text((60, 3), "GOES-18 Soft X-Ray Flux Measurements", font = font1, fill = 0) 
     draw.text((120, 109), "Time[UT]", font = font1, fill = 0) 
-    draw.text((0, 0), f"{month}/{day2}/{year}", font = font2, fill = 0) 
+    draw.text((0, 0), f"{month}/{day}/{year}", font = font2, fill = 0) 
     draw.text((0, 109), "L1b operational data", font = font2, fill = 0) 
-    epd.display(epd.getbuffer(zImage))
-    epd.sleep()
     print("displaying graph")
 
-#display sgps graph to new buffer
-def drawgraph2():
-    epd.Clear(0xFF)
+
+#draw sgps graph to new buffer
+def drawgraph2(buff):
 
     font1 = ImageFont.truetype('Font.ttc', 10)
     font2 = ImageFont.truetype('Font.ttc', 8)
     
-    aImage = Image.new('1', (epd.height, epd.width), 10)
-    draw = ImageDraw.Draw(aImage)
+    draw = ImageDraw.Draw(buff)
     graph = Image.open('proton.png')
     g = graph.resize((244, 100), Image.Resampling.LANCZOS)
-    aImage.paste(g, (10, 10))
+    buff.paste(g, (10, 10))
     draw.text((60, 3), "GOES-19 1 Minute Average Proton Flux", font = font1, fill = 0) 
     draw.text((120, 109), "Time[UT]", font = font1, fill = 0) 
     draw.text((0, 0), f"{month}/{day}/{year}", font = font2, fill = 0) 
     draw.text((0, 109), "L2 scientific data", font = font2, fill = 0) 
-    epd.display(epd.getbuffer(aImage))
-    epd.sleep()
     print("displaying graph")
 
+
 #download newest data for both graphs
-def main():
+def main_download():
+    
     download(file0, url_path)
     download(file1, url_path2)
 
 #make new graphs for both sets fo data
-def main2():
+def main_make():
+    
     makegraph1(file0)
     makegraph2(file1)
