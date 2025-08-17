@@ -76,18 +76,17 @@ class Buffers:
             self.yImage = Image.new('1', (self.epd.height, self.epd.width), 255)
     def locked_display(self, buff):
         with self.lock:
+            self.epd.init()
+            self.epd.Clear(0xFF)
             self.epd.display_fast(self.epd.getbuffer(buff))
+            self.epd.sleep()
 
 #setup the buffers and first screen
 buffers = Buffers(EPD)
 buffer = buffers.wImage
 
-#initialize screen
-EPD.init()
-
 #draw and display first screen
 def initial():
-    EPD.Clear(0xFF)
     
     data = Update()
     wImage = buffers.wImage
@@ -178,7 +177,6 @@ def button_callback(channel):
 #screen next button functionality
 def button_action():
     while True:
-        
         counter = counter_queue.get()
         try:
            
@@ -190,25 +188,22 @@ def button_action():
             yImage = buffers.yImage
 
             if counter == 2:
-                EPD.Clear(0xFF)
                 border_title(xImage)
                 buffers.locked_display(xImage)
             elif counter == 3:
-                EPD.Clear(0xFF)
                 border_title(yImage)
                 buffers.locked_display(yImage)
             elif counter == 4:
                 if file.is_file():
                     graph.drawgraph1()
                 else:
-                    EPD.Clear(0xFF)
+                    print("hi")
             elif counter == 5:
                 if file2.is_file():
                     graph.drawgraph2()
                 else:
-                    EPD.Clear(0xFF)
+                    print("hi")
             elif counter == 1:
-                EPD.Clear(0xFF)
                 border_title(wImage)
                 buffers.locked_display(wImage)
         except Exception as e:

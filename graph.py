@@ -18,11 +18,8 @@ today = datetime.datetime.now(datetime.UTC)
 year = today.strftime("%Y")
 month = today.strftime("%m")
 difference = datetime.timedelta(days=+2)
-difference2 = datetime.timedelta(days=+1)
 day_difference = today - difference
-day_difference2 = today - difference2
 day = day_difference.strftime("%d")
-day2 = day_difference2.strftime("%d")
 
 #setup retry and cache
 RETRIES = Retry(total=4, backoff_factor=2)
@@ -30,7 +27,7 @@ SESSION = requests_cache.CachedSession('xraydata', expiers_after=1200)
 SESSION.mount('https://', HTTPAdapter(max_retries=RETRIES))
 
 
-file0 = f"ops_exis-l1b-sfxr_g18_d{year}{month}{day2}_v0-0-0.nc"
+file0 = f"ops_exis-l1b-sfxr_g18_d{year}{month}{day}_v0-0-0.nc"
 file1= f"sci_sgps-l2-avg1m_g19_d{year}{month}{day}_v3-0-2.nc"
 url_path2= f"https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes19/l2/data/sgps-l2-avg1m/{year}/{month}/"
 url_path = f"https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes18/l1b/exis-l1b-sfxr/{year}/{month}/"
@@ -144,7 +141,7 @@ def drawgraph1():
     draw.text((0, 0), f"{month}/{day2}/{year}", font = font2, fill = 0) 
     draw.text((0, 109), "L1b operational data", font = font2, fill = 0) 
     epd.display(epd.getbuffer(zImage))
-
+    epd.sleep()
     print("displaying graph")
 
 #display sgps graph to new buffer
@@ -164,7 +161,7 @@ def drawgraph2():
     draw.text((0, 0), f"{month}/{day}/{year}", font = font2, fill = 0) 
     draw.text((0, 109), "L2 scientific data", font = font2, fill = 0) 
     epd.display(epd.getbuffer(aImage))
-
+    epd.sleep()
     print("displaying graph")
 
 #download newest data for both graphs
