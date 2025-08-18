@@ -140,7 +140,7 @@ def refresh_data():
     
     #download and update plots to latest data
     main_download()
-    time.sleep(1)
+    time.sleep(0.5)
     graph.main_make()
 
 
@@ -213,6 +213,7 @@ def button_action():
 
 #power off button functionality
 def button_off(channel):
+    GPIO.cleanup()
     os.system("sudo systemctl poweroff")
 
 
@@ -231,6 +232,12 @@ def main_loop():
     GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     GPIO.add_event_detect(13,GPIO.FALLING, callback=button_callback, bouncetime=350)
     GPIO.add_event_detect(15,GPIO.FALLING, callback=button_off, bouncetime=350)
+    
+    try:
+        time.sleep(0.5)
+    except KeyboardInterrupt:
+        print("Main loop thread terminating")
+        GPIO.cleaup()
 
 
 #Multiple threads so functions and loops can run together
