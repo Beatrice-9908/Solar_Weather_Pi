@@ -230,6 +230,7 @@ def button_action():
                     buffers.locked_display(zImage)
                 else:
                     buffers.locked_init()
+                    border_title(bImage)
                     screen_loading(bImage)
                     buffers.locked_display(bImage)
             elif counter == 5:
@@ -239,6 +240,7 @@ def button_action():
                     buffers.locked_display(aImage)
                 else:
                     buffers.locked_init()
+                    border_title(bImage)
                     screen_loading(bImage)
                     buffers.locked_display(bImage)
             elif counter == 1:
