@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import datetime
 import matplotlib
@@ -109,6 +110,5 @@ def drawgraph2(buff):
 
 #make new graphs for both sets fo data
 def main_make():
-    
     makegraph1(file0)
     makegraph2(file1)

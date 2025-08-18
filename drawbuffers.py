@@ -2,7 +2,6 @@ import os
 import schedule
 import time
 import threading
-from threading import Thread
 from datetime import datetime
 import queue
 from pathlib import Path
@@ -47,8 +46,10 @@ class Buffers:
             self.epd.sleep()
 
 
-#setup the buffers and first screen
+#setup the buffers and first screen for title buffer
 buffers = Buffers(EPD)
+titlebuffer = buffers.wImage
+
 
 #draw and display first screen
 def initial():
@@ -70,9 +71,6 @@ def initial():
     buffers.locked_display(wImage)
 
 
-#set first screen buffer for border_title
-titlebuffer = buffers.wImage
-
 #draw main border and title for each buffer
 def border_title(titlebuffer):
 
@@ -87,9 +85,6 @@ def screen_loading(buff):
     drawb = ImageDraw.Draw(buff)
     drawb.text((15,55), "Screen is still currently loading", font = FONT15, fill = 0)
     drawb.text((20,75), "please stand by ...", font = FONT15, fill = 0)
-
-#start initial buffer
-initial()
 
 
 #refresh all data
@@ -236,12 +231,4 @@ def main_loop():
     try:
         time.sleep(0.5)
     except KeyboardInterrupt:
-        print("Main loop thread terminating")
-        GPIO.cleaup()
-
-
-#Multiple threads so functions and loops can run together
-Thread(target = refresh_data).start()
-Thread(target = main_loop).start()
-Thread(target = button_action).start()
-Thread(target = refresh_loop, daemon=True).start()
+        GPIO.cleanup()
