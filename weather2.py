@@ -1,26 +1,17 @@
 import os
 import schedule
 import time
-from datetime import datetime
-import requests_cache
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-import xml.etree.ElementTree as ET
-import epd2in13_V4
-from PIL import Image,ImageDraw,ImageFont
-import RPi.GPIO as GPIO
 import threading
 from threading import Thread
-import graph
-from pathlib import Path
+from datetime import datetime
 import queue
-
-#setup session and retry mechanism for xml request
-HEADER = {"User-Agent": "SolarWeatherPi/1.0"}
-URLHAMQSL = 'https://www.hamqsl.com/solarxml.php'
-RETRIES = Retry(total=4, backoff_factor=2)
-SESSION = requests_cache.CachedSession('solar_data', expire_after=1200)
-SESSION.mount('https://', HTTPAdapter(max_retries=RETRIES))
+from pathlib import Path
+import RPi.GPIO as GPIO
+from PIL import Image,ImageDraw,ImageFont
+import epd2in13_V4
+import graph
+from dataparsing import Update
+from dataparsing import main_download
 
 #setting global variables and set counter for screen next button
 EPD = epd2in13_V4.EPD()
@@ -28,39 +19,6 @@ FONT15 = ImageFont.truetype('Font.ttc', 15)
 FONT11 = ImageFont.truetype('Font.ttc', 11)
 counter = 1
 counter_queue = queue.Queue()
-
-
-#class to hold data from xml file
-class Update:
-    
-    def __init__(self):
-        #set xml tags for parsing
-        response = SESSION.get(URLHAMQSL, headers=HEADER)
-        root = ET.fromstring(response.content)
-        solardata = root.find("solardata")
-        calccond = solardata.find("calculatedconditions")
-
-        #extracting values from xml file
-        self.flux = solardata.findtext("solarflux")
-        self.xray = solardata.findtext("xray")
-        self.ssn = solardata.findtext("sunspots")
-        self.wind = solardata.findtext("solarwind")
-        self.aindex = solardata.findtext("aindex")
-        self.kindex = solardata.findtext("kindex")
-        self.protonflux = solardata.findtext("protonflux")
-        self.electronflux = solardata.findtext("electonflux")
-        self.geomagfield = solardata.findtext("geomagfield")
-
-        #band conditions
-        self.bandarray = []
-        self.bandnamearray = []
-
-        for band in calccond.iter():
-            self.bandarray.append(band.text)
-
-        for band in root.iter('band'):
-            self.bandnamearray.append(band.get('name'))
-
 
 #class to hold buffer data
 class Buffers:
@@ -181,7 +139,7 @@ def refresh_data():
     print("data refreshed")
     
     #download and update plots to latest data
-    graph.main_download()
+    main_download()
     time.sleep(1)
     graph.main_make()
 
@@ -260,7 +218,7 @@ def button_off(channel):
 
 #data refresh loop
 def refresh_loop():
-    schedule.every(20).minutes.do(refresh_data)
+    schedule.every(15).minutes.do(refresh_data)
     while True:
         schedule.run_pending()
         time.sleep(0.5)
