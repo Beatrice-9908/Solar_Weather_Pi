@@ -128,7 +128,7 @@ class JsonVariables:
         flux = np.array(flux1)
         energy = np.array(energy1)
         
-        energy_level = energy == "\u003E=1 MeV"
+        energy_level = energy == "\u003E=5 MeV"
 
         timep = time[energy_level]
         fluxp = flux[energy_level]
@@ -161,8 +161,8 @@ def makegraph1(file):
         )
     plt.tight_layout()
     plt.yscale("log")
-    plt.gca().tick_params(axis='both', which='major', width=2, length=5, color="black")
     plt.yticks(powersoften, flareclasses)
+    plt.gca().tick_params(axis='both', which='major', width=2, length=5, color="black")
     plt.gca().set_xticklabels([])
     plt.grid(True, axis='y', linestyle='dotted', linewidth=2)
     plt.savefig('xray_inter.png', dpi=100, bbox_inches='tight')
@@ -185,9 +185,9 @@ def makegraph2(file):
         )
     plt.tight_layout()
     plt.yscale("log")
+    plt.yticks([1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4])
     plt.gca().tick_params(axis='both', which='major', width=2, length=5, color="black")
     plt.gca().set_xticklabels([])
-    plt.ylim(1e-2, 1e4)
     plt.savefig('proton_inter.png', dpi=150, bbox_inches='tight')
     plt.close()
     os.rename("proton_inter.png", "proton.png")
@@ -204,7 +204,7 @@ def drawgraph1(buff):
     graph = Image.open('xray.png')
     g = graph.resize((244, 100), Image.Resampling.LANCZOS)
     buff.paste(g, (10, 10))
-    draw.text((60, 3), "GOES-18 X-Ray Flux Readings 1 Day", font = font1, fill = 0) 
+    draw.text((65, 3), "GOES-18 X-Ray Flux Readings 1 Day", font = font1, fill = 0) 
     draw.text((90, 109), "Time[UT] (1 Minute Interval)", font = font1, fill = 0) 
     draw.text((0, 0), f"{month}/{day}/{year}", font = font2, fill = 0) 
     print("displaying graph")
@@ -220,7 +220,7 @@ def drawgraph2(buff):
     graph = Image.open('proton.png')
     g = graph.resize((244, 100), Image.Resampling.LANCZOS)
     buff.paste(g, (10, 10))
-    draw.text((60, 3), "GOES-18 Proton Flux Readings 1 day", font = font1, fill = 0) 
+    draw.text((65, 3), "GOES-18 Proton Flux Readings 1 day", font = font1, fill = 0) 
     draw.text((100, 109), "Time[UT] (5 Minute Interval)", font = font1, fill = 0) 
     draw.text((0, 0), f"{month}/{day}/{year}", font = font2, fill = 0) 
     print("displaying graph")

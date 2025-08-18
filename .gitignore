@@ -8,5 +8,5 @@ __pycache__/
 #Ignore plot images
 *.png
 
-#Ignore .nc data files
-*.nc
+#Ignore .json data files
+*.json

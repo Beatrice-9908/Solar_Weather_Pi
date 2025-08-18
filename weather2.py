@@ -106,7 +106,7 @@ def initial():
     draww.text((2, 67), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
     draww.text((2, 83), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
     draww.text((50, 99), "Solar Weather data sources", font = FONT11, fill = 0)
-    draww.text((10, 108), "https://hamqsl.com          https://ncei.noaa.gov", font = FONT11, fill = 0)
+    draww.text((10, 108), "https://hamqsl.com          https://swpc.noaa.gov", font = FONT11, fill = 0)
     
     buffers.locked_init()
     buffers.locked_display(wImage)
@@ -156,7 +156,7 @@ def refresh_data():
     draww.text((2, 67), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
     draww.text((2, 82), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
     draww.text((50, 99), "Solar Weather data sources", font = FONT11, fill = 0)
-    draww.text((10, 108), "https://hamqsl.com          https://ncei.noaa.gov", font = FONT11, fill = 0)
+    draww.text((10, 108), "https://hamqsl.com          https://swpc.noaa.gov", font = FONT11, fill = 0)
      
     drawx.text((2, 22), "HF band:", font = FONT15, fill = 0)
     drawx.text((2, 42), f"{data.bandnamearray[0]}" + "   day: " + f"{data.bandarray[1]}", font = FONT15, fill = 0)
@@ -173,7 +173,7 @@ def refresh_data():
     drawy.text((2, 52), f"Electron Flux = {data.electronflux}", font = FONT15, fill = 0)
     drawy.text((2, 72), f"GeoMag Field = {data.geomagfield}", font = FONT15, fill = 0)
     drawy.text((50, 99), "Solar Weather data sources", font = FONT11, fill = 0)
-    drawy.text((10, 108), "https://hamqsl.com          https://ncei.noaa.gov", font = FONT11, fill = 0)
+    drawy.text((10, 108), "https://hamqsl.com          https://swpc.noaa.gov", font = FONT11, fill = 0)
    
     draww.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     drawx.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
