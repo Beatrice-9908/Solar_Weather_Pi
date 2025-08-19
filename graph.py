@@ -1,12 +1,9 @@
 import os
-import sys
-import time
 import datetime
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from PIL import Image,ImageDraw,ImageFont
-import epd2in13_V4
 from dataparsing import JsonVariables
 
 #set datetime variables and day differences because NOAA l1b and l2 data sometimes isnt available

@@ -1,10 +1,8 @@
-import os
 import requests_cache
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 import xml.etree.ElementTree as ET
 import numpy as np
-import json
 
 #setup session and retry mechanism for requests
 HEADER = {"User-Agent": "SolarWeatherPi/1.0"}
