@@ -10,7 +10,6 @@ from PIL import Image,ImageDraw,ImageFont
 import epd2in13_V4
 import graph
 from dataparsing import Update
-from dataparsing import main_download
 
 #setting global variables and set counter for screen next button
 EPD = epd2in13_V4.EPD()
@@ -134,8 +133,6 @@ def refresh_data():
     print("data refreshed")
     
     #download and update plots to latest data
-    main_download()
-    time.sleep(0.5)
     graph.main_make()
 
 

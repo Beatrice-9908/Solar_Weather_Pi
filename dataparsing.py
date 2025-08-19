@@ -6,43 +6,32 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import json
 
-#setup session and retry mechanism for xml request
+#setup session and retry mechanism for requests
 HEADER = {"User-Agent": "SolarWeatherPi/1.0"}
 RETRIES = Retry(total=4, backoff_factor=2)
-SESSION = requests_cache.CachedSession('solar_data', expire_after=1200)
+SESSION = requests_cache.CachedSession('solar_data', expire_after=600)
 SESSION.mount('https://', HTTPAdapter(max_retries=RETRIES))
 
 #file and url info
-URLHAMQSL = 'https://www.hamqsl.com/solarxml.php'
 file0 = "xrays-1-day.json"
 file1 = "integral-protons-1-day.json"
+file3 = "solarxml.php"
 url_path0 = "https://services.swpc.noaa.gov/json/goes/primary/"
+URLHAMQSL = 'https://www.hamqsl.com/'
 
-#download new data from noaa
+#download new data from sources
 def download(file, url):
-  
-    if not os.path.exists(file):
         try:
             headers = {"User-Agent": "SolarWeatherPi/1.0"}   
             r = SESSION.get(url + file, headers = headers, timeout=30)
         except requests.exceptions.Timeout:
             print("time out")
+            return None
         except requests.exceptions.HTTPError as e:
             print(f"HTTP error: {e}")
-        else:
-            if r.status_code != 200:
-                raise RuntimeError(f"Download Failed {r.status_code}")
-            if len(r.content) < 100000:
-                raise RuntimeError("tiny file")
-            with open(file,"wb") as f:
-                f.write(r.content)
-
-
-#download newest data for both graphs
-def main_download():
-    
-    download(file0, url_path0)
-    download(file1, url_path0)
+            return None
+        
+        return r
 
 
 #class to hold data from xml file
@@ -50,8 +39,8 @@ class Update:
     
     def __init__(self):
         #set xml tags for parsing
-        response = SESSION.get(URLHAMQSL, headers=HEADER)
-        root = ET.fromstring(response.content)
+        response = download(file3, URLHAMQSL)
+        root = ET.fromstring(response.text)
         solardata = root.find("solardata")
         calccond = solardata.find("calculatedconditions")
 
@@ -76,11 +65,14 @@ class Update:
         for band in root.iter('band'):
             self.bandnamearray.append(band.get('name'))
 
-
+#class to hold variables for noaa data that will be plotted
 class JsonVariables:
     def __init__(self, file):
-        with open(file, 'r') as f:
-            self.data = json.load(f)
+        r = download(file, url_path0)
+        if r is None:
+            self.data = []
+        else:
+            self.data = r.json()
     def fluxj(self):
         data = self.data
         energy1 = []
@@ -94,13 +86,15 @@ class JsonVariables:
             time1.append(entry["time_tag"])
             contam1.append(entry["electron_contaminaton"])
             correct1.append(entry["electron_correction"])
-        
+       
+        #convert large arrays to numpy arrays
         energy = np.array(energy1)
         flux = np.array(flux1)
         time = np.array(time1)
         contam = np.array(contam1)
         correct = np.array(correct1)
-
+        
+        #mask data to seperate it
         lowpassband = energy == "0.05-0.4nm"
         highpassband = energy == "0.1-0.8nm"
         
@@ -109,7 +103,8 @@ class JsonVariables:
 
         fluxvh = np.where(contam[highpassband] == 1, correct[highpassband], flux[highpassband])
         fluxvl = np.where(contam[lowpassband] == 1, correct[lowpassband], flux[lowpassband])
-
+        
+        #downsample data for the pi
         downsample = 8
 
         self.fluxvh = fluxvh[::downsample]
@@ -127,15 +122,18 @@ class JsonVariables:
             flux1.append(entry["flux"]) 
             energy1.append(entry["energy"]) 
         
+        #convert to numpy arrays
         time = np.array(time1)
         flux = np.array(flux1)
         energy = np.array(energy1)
         
+        #mask so we only plot the energy threshold we want, cant plot them all or pi will die
         energy_level = energy == "\u003E=5 MeV"
 
         timep = time[energy_level]
         fluxp = flux[energy_level]
 
+        #downsampling so pi is happy
         downsample = 8
 
         timep = timep[::downsample]
