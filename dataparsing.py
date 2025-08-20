@@ -11,10 +11,12 @@ SESSION = requests_cache.CachedSession('solar_data', expire_after=600)
 SESSION.mount('https://', HTTPAdapter(max_retries=RETRIES))
 
 #file and url info
-file0 = "xrays-1-day.json"
-file1 = "integral-protons-1-day.json"
+file0 = "xrays-3-day.json"
+file1 = "integral-protons-3-day.json"
 file3 = "solarxml.php"
+file4 = "f107_cm_flux.json"
 url_path0 = "https://services.swpc.noaa.gov/json/goes/primary/"
+url_2 = "https://services.swpc.noaa.gov/json/"
 URLHAMQSL = 'https://www.hamqsl.com/'
 
 #download new data from sources
@@ -65,8 +67,8 @@ class Update:
 
 #class to hold variables for noaa data that will be plotted
 class JsonVariables:
-    def __init__(self, file):
-        r = download(file, url_path0)
+    def __init__(self, file, url):
+        r = download(file, url)
         if r is None:
             self.data = []
         else:
@@ -103,7 +105,7 @@ class JsonVariables:
         fluxvl = np.where(contam[lowpassband] == 1, correct[lowpassband], flux[lowpassband])
         
         #downsample data for the pi
-        downsample = 8
+        downsample = 10
 
         self.fluxvh = fluxvh[::downsample]
         self.fluxvl = fluxvl[::downsample]
@@ -132,10 +134,31 @@ class JsonVariables:
         fluxp = flux[energy_level]
 
         #downsampling so pi is happy
-        downsample = 8
+        downsample = 10
 
         timep = timep[::downsample]
         fluxp = fluxp[::downsample]
 
         self.timep = timep
         self.fluxp = fluxp
+
+
+    def solarflux(self):
+        data = self.data
+        time1 = []
+        flux1 = []
+        for entry in data:
+            time1.append(entry["reporting_schedule"])
+            flux1.append(entry["flux"])
+
+        time = np.array(time1)
+        flux = np.array(flux1)
+        
+        maska = time == "Afternoon"
+
+        self.fd1 = flux[maska][0]
+        self.fd2 = flux[maska][1]
+        self.fd3 = flux[maska][2]
+        self.fd4 = flux[maska][3]
+        self.fd5 = flux[maska][4]
+

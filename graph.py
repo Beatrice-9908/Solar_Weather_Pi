@@ -17,14 +17,15 @@ flareclasses = ["", "A", "B", "C", "M", "X", ""]
 powersoften = [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3]
 
 #file and url info
-file0 = "xrays-1-day.json"
-file1 = "integral-protons-1-day.json"
+file0 = "xrays-3-day.json"
+file1 = "integral-protons-3-day.json"
+url_path0 = "https://services.swpc.noaa.gov/json/goes/primary/"
 
 #make graph for goes-18 sfxr
-def makegraph1(file):
+def makegraph1(file, url):
 
     plt.figure(figsize=(3.75, 2.22), dpi=100)
-    j = JsonVariables(file)
+    j = JsonVariables(file, url)
     j.fluxj()
     plt.plot(
         j.timel,
@@ -51,10 +52,10 @@ def makegraph1(file):
 
 
 #make graph for goes-19 sgps data
-def makegraph2(file):
+def makegraph2(file, url):
 
     plt.figure(figsize=(3.75, 2.22), dpi=150)
-    j = JsonVariables(file)
+    j = JsonVariables(file, url)
     j.protonsj()
     plt.plot(
         j.timep,
@@ -107,5 +108,5 @@ def drawgraph2(buff):
 
 #make new graphs for both sets fo data
 def main_make():
-    makegraph1(file0)
-    makegraph2(file1)
+    makegraph1(file0, url_path0)
+    makegraph2(file1, url_path0)

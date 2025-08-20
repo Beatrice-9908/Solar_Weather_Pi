@@ -10,6 +10,7 @@ from PIL import Image,ImageDraw,ImageFont
 import epd2in13_V4
 import graph
 from dataparsing import Update
+from dataparsing import JsonVariables
 
 #setting global variables and set counter for screen next button
 EPD = epd2in13_V4.EPD()
@@ -30,11 +31,15 @@ class Buffers:
         self.zImage = Image.new('1', (epd.height, epd.width), 255)
         self.aImage = Image.new('1', (epd.height, epd.width), 255)
         self.bImage = Image.new('1', (epd.height, epd.width), 255)
+        self.cImage = Image.new('1', (epd.height, epd.width), 255)
+        self.dImage = Image.new('1', (epd.height, epd.width), 255)
     def clear(self):
         with self.lock:
             self.wImage = Image.new('1', (self.epd.height, self.epd.width), 255)
             self.xImage = Image.new('1', (self.epd.height, self.epd.width), 255)
             self.yImage = Image.new('1', (self.epd.height, self.epd.width), 255)
+            self.cImage = Image.new('1', (self.epd.height, self.epd.width), 255)
+            self.dImage = Image.new('1', (self.epd.height, self.epd.width), 255)
     def locked_init(self):
         with self.lock:
             self.epd.init()
@@ -60,9 +65,9 @@ def initial():
 
     draww.text((2, 22), f"Solar Flux = {data.flux}", font = FONT15, fill = 0)
     draww.text((2, 37), f"Sunspots = {data.ssn}", font = FONT15, fill = 0)
-    draww.text((2, 52), f"Solar Wind = {data.wind}", font = FONT15, fill = 0)
-    draww.text((2, 67), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
-    draww.text((2, 83), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
+    draww.text((2, 52), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
+    draww.text((2, 67), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
+    draww.text((2, 82), f"GeoMag Field = {data.geomagfield}", font = FONT15, fill = 0)
     draww.text((50, 99), "Solar Weather data sources", font = FONT11, fill = 0)
     draww.text((10, 108), "https://hamqsl.com          https://swpc.noaa.gov", font = FONT11, fill = 0)
     
@@ -93,20 +98,28 @@ def refresh_data():
     
     data = Update()
 
+    url_2 = "https://services.swpc.noaa.gov/json/"
+    file4 = "f107_cm_flux.json"
+
+    j = JsonVariables(file4, url_2)
+    j.solarflux()
+
     wImage = buffers.wImage
     xImage = buffers.xImage
     yImage = buffers.yImage
+    cImage = buffers.cImage
     
     draww = ImageDraw.Draw(wImage)
     drawx = ImageDraw.Draw(xImage)
     drawy = ImageDraw.Draw(yImage)
+    drawc = ImageDraw.Draw(cImage)
 
     #draw text to screen
     draww.text((2, 22), f"Solar Flux = {data.flux}", font = FONT15, fill = 0)
     draww.text((2, 37), f"Sunspots = {data.ssn}", font = FONT15, fill = 0)
-    draww.text((2, 52), f"Solar Wind = {data.wind}", font = FONT15, fill = 0)
-    draww.text((2, 67), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
-    draww.text((2, 82), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
+    draww.text((2, 52), f"Current XRay Flare Class = {data.xray}", font = FONT15, fill = 0)
+    draww.text((2, 67), f"A Index = {data.aindex}   K Index = {data.kindex}", font = FONT15, fill = 0)
+    draww.text((2, 82), f"GeoMag Field = {data.geomagfield}", font = FONT15, fill = 0)
     draww.text((50, 99), "Solar Weather data sources", font = FONT11, fill = 0)
     draww.text((10, 108), "https://hamqsl.com          https://swpc.noaa.gov", font = FONT11, fill = 0)
      
@@ -123,7 +136,7 @@ def refresh_data():
     
     drawy.text((2, 32), f"Proton Flux = {data.protonflux}", font = FONT15, fill = 0)   
     drawy.text((2, 52), f"Electron Flux = {data.electronflux}", font = FONT15, fill = 0)
-    drawy.text((2, 72), f"GeoMag Field = {data.geomagfield}", font = FONT15, fill = 0)
+    drawy.text((2, 72), f"Solar Wind = {data.wind}", font = FONT15, fill = 0)
     drawy.text((50, 99), "Solar Weather data sources", font = FONT11, fill = 0)
     drawy.text((10, 108), "https://hamqsl.com          https://swpc.noaa.gov", font = FONT11, fill = 0)
    
@@ -132,6 +145,18 @@ def refresh_data():
     drawy.text((180, 25), datetime.now().strftime("%I:%M%p"), font = FONT15, fill = 0)
     print("data refreshed")
     
+
+    drawc.text((2, 2), "SFI over the past 5 days", font = FONT15, fill = 0)   
+    drawc.line([(0,20),(250,20)], fill = 0, width = 2)
+    drawc.text((2, 22), f"{j.fd1} " + datetime.now().strftime("%B %d"), font = FONT15, fill = 0)
+    drawc.text((2, 37), f"{j.fd2}", font = FONT15, fill = 0)
+    drawc.text((2, 52), f"{j.fd3}", font = FONT15, fill = 0)
+    drawc.text((2, 67), f"{j.fd4}", font = FONT15, fill = 0)
+    drawc.text((2, 82), f"{j.fd5}", font = FONT15, fill = 0)
+    drawc.text((50, 99), "Solar Weather data sources", font = FONT11, fill = 0)
+    drawc.text((10, 108), "https://hamqsl.com          https://swpc.noaa.gov", font = FONT11, fill = 0)
+   
+
     #download and update plots to latest data
     graph.main_make()
 
@@ -142,7 +167,7 @@ def button_callback(channel):
     print("button pressed")
     global counter
     counter = counter + 1
-    if counter > 5:
+    if counter > 6:
         counter = 1
 
     counter_queue.put(counter)
@@ -164,6 +189,7 @@ def button_action():
             zImage = buffers.zImage
             aImage = buffers.aImage
             bImage = buffers.bImage
+            cImage = buffers.cImage
 
             if counter == 2:
                 buffers.locked_init()
@@ -193,6 +219,9 @@ def button_action():
                     border_title(bImage)
                     screen_loading(bImage)
                     buffers.locked_display(bImage)
+            elif counter == 6:
+                buffers.locked_init()
+                buffers.locked_display(cImage)
             elif counter == 1:
                 buffers.locked_init()
                 border_title(wImage)
